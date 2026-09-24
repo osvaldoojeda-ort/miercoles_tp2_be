@@ -235,11 +235,26 @@ Todos los métodos son `async` aunque hoy trabajen con un array sincrónico. As�
 
 Acá está el corazón del patrón. La pregunta es: ¿cómo le llega el DAO al caso de uso?
 
-### Opción A — importar directo (❌ acoplamiento)
+### Concepto y la analogía del tomacorriente
+
+Para comprender la Inversión de Dependencias (DIP, el principio SOLID), se puede utilizar la analogía de un tomacorriente doméstico:
+
+- **Sin Inversión de Dependencias (Acoplado):** Sería como si un electrodoméstico tuviese sus cables internos soldados directamente a los cables de la pared. Si la compañía eléctrica cambia la tecnología o se quiere mover el artefacto, habría que romper la pared y desoldar los cables.
+- **Con Inversión de Dependencias (Desacoplado):** Se introduce un contrato intermedio (el tomacorriente). La pared ofrece un enchufe estándar y el artefacto posee una ficha estándar. Al artefacto no le importa si la energía proviene de una fuente solar, hidroeléctrica o un generador; solo requiere un tomacorriente compatible para funcionar.
+
+En el código de la aplicación, el "tomacorriente" es el contrato del DAO (sus métodos como `getByIsbn` y `save`).
+
+### Inversión de Dependencias (DIP) vs Inyección de Dependencias (DI)
+
+- **Inversión de Dependencias (DIP):** Es el principio de diseño (SOLID). Establece que la lógica de negocio no debe depender de una base de datos específica, sino de una abstracción o contrato.
+- **Inyección de Dependencias (DI):** Es la técnica práctica mediante la cual se pasa la dependencia desde afuera (por parámetros de función o constructor).
+- **Manual:** Se denomina "manual" porque en Node.js puro la dependencia se pasa explícitamente sin utilizar un framework con contenedor IoC automático (como NestJS o Spring).
+
+### Opción A — Importar directo (Acoplado)
 
 ```js
-// usecases/createBook.js
-import dao from "../dao/booksMemoryDao.js"; // ← acoplado a la implementación concreta
+// usecases/books/createBook.js
+import dao from "../../dao/booksMemoryDao.js"; // Acoplado a la implementación concreta
 
 async function createBook(data) {
   // ...
@@ -247,23 +262,29 @@ async function createBook(data) {
 }
 ```
 
-Si queremos cambiar a Sequelize, hay que editar el caso de uso. Y para testear, hay que mockear el módulo. Esto es exactamente lo que queremos evitar.
+Si queremos cambiar a Sequelize o reemplazar la base de datos, habría que editar el caso de uso. Y para testear, habría que mockear módulos. Esto es exactamente lo que queremos evitar.
 
-### Opción B — inyectar como argumento (✅ desacoplado)
+### Opción B — Inyectar como argumento (Desacoplado)
 
 ```js
-// usecases/createBook.js
-async function createBook(data, dao) { // ← dao viene de afuera
+// usecases/books/createBook.js
+async function createBook(data, dao) { // dao viene de afuera
   // ...
   return dao.save(data);
 }
 ```
 
-Ahora `createBook` no importa nada de persistencia. Quien llame a `createBook` decide qué DAO usar. Eso es **inversión de dependencias**: la función de alto nivel (caso de uso) no depende de la implementación de bajo nivel (array, SQL); ambas dependen del contrato (el objeto `dao` con sus métodos).
+Ahora `createBook` no importa nada de la capa de persistencia. Quien llame a `createBook` decide qué DAO utilizar. Eso es **inversión de dependencias**: la función de alto nivel (caso de uso) no depende de la implementación de bajo nivel (array, SQL); ambas dependen del contrato (el objeto `dao` con sus métodos).
 
-### Opción C — factory que arma el caso de uso (clase 8)
+### Beneficios principales
 
-En la clase 8 veremos cómo crear una *factory* que recibe el DAO y devuelve todos los casos de uso ya configurados, para no tener que pasar el `dao` en cada llamada. Por ahora, la opción B es suficiente para entender el concepto.
+1. **Flexibilidad:** Si se cambia la persistencia a PostgreSQL en el futuro, el caso de uso no sufre modificaciones.
+2. **Testeabilidad:** En un test unitario no se requiere una base de datos real; se puede enviar un objeto simulado (mock) con los mismos métodos.
+3. **Mantenibilidad:** La lógica de negocio queda aislada de la infraestructura.
+
+### Opción C — Factory que arma el caso de uso (clase 8)
+
+En la clase 8 se analiza cómo crear una *factory* que recibe el DAO y devuelve todos los casos de uso ya configurados, para no tener que pasar el `dao` manualmente en cada llamada. Por ahora, la opción B es suficiente para entender el concepto.
 
 ---
 
