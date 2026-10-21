@@ -11,14 +11,14 @@ class UsersController {
     this.#useCases = useCases;
   }
 
-  // GET /users
+  // GET /users (?nombre=&email=&rol=&page=&limit=&incluir=libros&activos=)
   list = async (req, res) => {
-    res.json(await this.#useCases.getUsers());
+    res.json(await this.#useCases.getUsers(req.query));
   };
 
   // GET /users/:id
   get = async (req, res) => {
-    const user = await this.#useCases.getUserById(Number(req.params.id));
+    const user = await this.#useCases.getUserById(Number(req.params.id), req.query);
     if (!user) throw new AppError("USER_NOT_FOUND", "No existe un usuario con ese id", 404);
     res.json(user);
   };

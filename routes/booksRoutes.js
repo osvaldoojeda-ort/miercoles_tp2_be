@@ -4,6 +4,7 @@ import {
   createBookSchema,
   updateBookSchema,
   queryBooksSchema,
+  queryBookByIdSchema,
   bookIdParamSchema,
 } from "../schemas/bookSchema.js";
 
@@ -15,7 +16,7 @@ function createBooksRouter(controller) {
   const router = express.Router();
 
   router.get("/", validateQuery(queryBooksSchema), controller.list);
-  router.get("/:id", validateParams(bookIdParamSchema), controller.get);
+  router.get("/:id", validateParams(bookIdParamSchema), validateQuery(queryBookByIdSchema), controller.get);
   router.post("/", validate(createBookSchema), controller.create);
   router.put("/:id", validateParams(bookIdParamSchema), validate(updateBookSchema), controller.update);
   router.delete("/:id", validateParams(bookIdParamSchema), controller.remove);

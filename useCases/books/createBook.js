@@ -1,10 +1,12 @@
 import AppError from "../../errors/AppError.js";
+import { LOW_STOCK_THRESHOLD } from "../../config/config.js";
+import EVENTS from "../../events/eventNames.js";
 
 /**
  * Caso de Uso: Crear un nuevo libro.
  * Aplica la regla de negocio: Si se proporciona ISBN, no debe estar duplicado.
  */
-async function createBook(data, dao, usersDao) {
+async function createBook(data, dao, events) {
   if (data.isbn) {
     const existingBook = await dao.getByIsbn(data.isbn);
     if (existingBook) {
@@ -12,14 +14,14 @@ async function createBook(data, dao, usersDao) {
     }
   }
 
-  if (data.userId != null) {
-    const user = await usersDao.getById(data.userId);
-    if (!user) {
-      throw new AppError("USER_NOT_FOUND", "No existe un usuario con ese id", 404);
-    }
+  const created = await dao.save(data);
+
+  // Un libro puede nacer con stock bajo
+  if (created.stock <= LOW_STOCK_THRESHOLD) {
+    events.emit(EVENTS.BOOK_LOW_STOCK, { id: created.id, titulo: created.titulo, stock: created.stock });
   }
 
-  return dao.save(data);
+  return created;
 }
 
 export default createBook;

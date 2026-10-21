@@ -26,7 +26,7 @@ async function startServer() {
   app.use(errorHandler);
 
   app.listen(PORT, () => {
-    console.log(`Servidor Express (Clase 9) corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor Express (Clase 10) corriendo en http://localhost:${PORT}`);
   });
 }
 

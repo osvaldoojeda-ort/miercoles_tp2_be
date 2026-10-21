@@ -11,8 +11,18 @@ class UsersMemoryDao {
     this.#nextId = this.#users.reduce((max, u) => (u.id > max ? u.id : max), 0) + 1;
   }
 
-  async getAll() {
-    return [...this.#users];
+  // filters: { nombre, email, rol, page, limit }
+  async getAll({ nombre, email, rol, page = 1, limit } = {}) {
+    let users = this.#users.filter(
+      (u) =>
+        (nombre === undefined || u.nombre.toLowerCase().includes(nombre.toLowerCase())) &&
+        (email === undefined || u.email === email) &&
+        (rol === undefined || u.rol === rol)
+    );
+
+    if (limit) users = users.slice((page - 1) * limit, page * limit);
+
+    return users.map((u) => ({ ...u }));
   }
 
   async getById(id) {

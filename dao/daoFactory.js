@@ -3,6 +3,8 @@ import booksMemoryDao from "./books/BooksMemoryDao.js";
 import booksSequelizeDao from "./books/BooksSequelizeDao.js";
 import usersMemoryDao from "./users/UsersMemoryDao.js";
 import usersSequelizeDao from "./users/UsersSequelizeDao.js";
+import loansMemoryDao from "./loans/LoansMemoryDao.js";
+import loansSequelizeDao from "./loans/LoansSequelizeDao.js";
 
 /**
  * Factory de DAOs.
@@ -22,4 +24,8 @@ function getUsersDao() {
   return PERSISTENCE_TYPE === "sequelize" ? usersSequelizeDao : usersMemoryDao;
 }
 
-export { getBooksDao, getUsersDao };
+function getLoansDao() {
+  return PERSISTENCE_TYPE === "sequelize" ? loansSequelizeDao : loansMemoryDao;
+}
+
+export { getBooksDao, getUsersDao, getLoansDao };

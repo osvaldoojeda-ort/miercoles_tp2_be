@@ -12,7 +12,7 @@ class BooksController {
     this.#useCases = useCases;
   }
 
-  // GET /books (?autor=...&isbn=...&sort=...)
+  // GET /books (?autor=&isbn=&sort=&page=&limit=&incluir=usuarios&activos=)
   list = async (req, res) => {
     const books = await this.#useCases.getBooks(req.query);
     res.json(books);
@@ -20,7 +20,7 @@ class BooksController {
 
   // GET /books/:id
   get = async (req, res) => {
-    const book = await this.#useCases.getBookById(Number(req.params.id));
+    const book = await this.#useCases.getBookById(Number(req.params.id), req.query);
     if (!book) throw new AppError("BOOK_NOT_FOUND", "No existe un libro con ese id", 404);
     res.json(book);
   };

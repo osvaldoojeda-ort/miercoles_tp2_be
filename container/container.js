@@ -1,10 +1,16 @@
-import { getBooksDao, getUsersDao } from "../dao/daoFactory.js";
+import { getBooksDao, getUsersDao, getLoansDao } from "../dao/daoFactory.js";
 import makeBookUseCases from "../usecases/books/makeBookUseCases.js";
 import BooksController from "../controllers/BooksController.js";
 import createBooksRouter from "../routes/booksRoutes.js";
 import makeUserUseCases from "../usecases/users/makeUserUseCases.js";
 import UsersController from "../controllers/UsersController.js";
 import createUsersRouter from "../routes/usersRoutes.js";
+import makeLoanUseCases from "../usecases/loans/makeLoanUseCases.js";
+import LoansController from "../controllers/LoansController.js";
+import createLoansRouter from "../routes/loansRoutes.js";
+import createEventBus from "../events/eventBus.js";
+import { getNotifier } from "../notifications/notifierFactory.js";
+import registerAlertListeners from "../alerts/registerAlertListeners.js";
 import { Router } from "express";
 
 /**
@@ -26,8 +32,18 @@ async function buildContainer() {
     await usersDao.init();
   }
 
-  // 2. Inyectamos los DAOs en las Factories de Casos de Uso
-  const bookUseCases = makeBookUseCases(booksDao, usersDao);
+  // Préstamos: tabla intermedia entre usuarios y libros (relación N a N)
+  const loansDao = getLoansDao();
+  if (typeof loansDao.init === "function") {
+    await loansDao.init();
+  }
+
+  // Eventos: el bus conecta a quien emite (casos de uso) con quien escucha (alertas)
+  const events = createEventBus();
+  registerAlertListeners(events, getNotifier());
+
+  // 2. Inyectamos los DAOs y el bus en las Factories de Casos de Uso
+  const bookUseCases = makeBookUseCases(booksDao, loansDao, events);
 
   // 3. Inyectamos los Casos de Uso en los Controladores
   const booksController = new BooksController(bookUseCases);
@@ -37,8 +53,12 @@ async function buildContainer() {
   router.use("/books", createBooksRouter(booksController));
 
   // Entidad Users
-  const usersController = new UsersController(makeUserUseCases(usersDao));
+  const usersController = new UsersController(makeUserUseCases(usersDao, loansDao, events));
   router.use("/users", createUsersRouter(usersController));
+
+  // Entidad Loans
+  const loansController = new LoansController(makeLoanUseCases({ loansDao, booksDao, usersDao, events }));
+  router.use("/loans", createLoansRouter(loansController));
 
   // Retornamos el router principal listo para ser usado por Express
   return router;
